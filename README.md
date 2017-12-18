@@ -1,0 +1,2 @@
+# S3BA
+We study the problem of best arm identification in multi-armed bandits, where the problem setting can be either stochastic or adversarial and is not revealed to the forecaster a priori. We propose a universal best arm identification algorithm, called S3-BA, that returns the best arm without knowing the underlying model. We evaluate the performance of various algorithms, via numerical experiments. Two synthetic datasets and one real-world dataset of the US stock market are used in the simulations. 
