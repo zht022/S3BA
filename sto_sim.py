@@ -85,7 +85,7 @@ for i in range(4):
             loss_exp[i][j, k, :] = np.random.rand(int(Budgets)) > mu[i + 1][k]
     sio.savemat('./sto_loss_exp' + str(i) + '.mat', {'sto_loss_exp' + str(i): loss_exp[i]})
 
-'''print('Algorithm ' + str(1))
+print('Algorithm ' + str(1))
 for i in range(4):
     print('Group ' + str(i + 1))
     er_SH_sto[i], _, _ = Exp(alg=Successive_Halving, playtimes=playtime, c=[], other_alg_parameters=[], N=Budgets, K=K,
@@ -131,7 +131,7 @@ for i in range(4):
                                 loss_generate=False, losses=loss_exp[i], mu=[], var=[], best_arm=1, turn_bud_to_N=True, verbose=500)
     print trigger_rate, np.mean(np.array(trigger_time))
     pickle.dump(trigger_time, open('trigger_time_sto_exp6' + str(i + 1) + '.pkl', 'wb'))
-sio.savemat('./er_S3BA_sdelta_sto.mat', {'er_S3BA_sdelta_sto': er_S3BA_sdelta_sto})'''
+sio.savemat('./er_S3BA_sdelta_sto.mat', {'er_S3BA_sdelta_sto': er_S3BA_sdelta_sto})
 
 print('Algorithm ' + str(7))
 for i in range(4):
@@ -141,6 +141,11 @@ for i in range(4):
     print trigger_rate, np.mean(np.array(trigger_time))
     pickle.dump(trigger_time, open('trigger_time_sto_exp7' + str(i + 1) + '.pkl', 'wb'))
 sio.savemat('./er_S3BA_sdelta2_sto.mat', {'er_S3BA_sdelta2_sto': er_S3BA_sdelta2_sto})
+
+
+
+
+
 
 
 
