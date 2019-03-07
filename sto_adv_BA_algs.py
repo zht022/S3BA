@@ -337,11 +337,6 @@ def S3_BA(parameters, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
                     if ((t[-1] - tt) / (len(Active) * np.ceil(np.log2(K))) <= 1):
                         return np.argmax(hat_mu) + 1, trigger, trigger_time
                     if loss_generate == False:
-                        #loss[:, :loss.shape[1] - tt] = loss[:, tt:]
-                        #for i in range(K):
-                            #for j in range(loss.shape[1] - tt):
-                            #    loss[i, j] = loss[i, int(j + tt)]
-                        #loss = loss[Active, tt:] # eliminate the losses which have been observed
                         It = Successive_Halving(t[-1] - tt, len(Active), loss_generate, loss[Active, tt:], [], [], turn_bud_to_N)
                         return Active[It - 1] + 1, trigger, trigger_time
                     if loss_generate == Bernoulli_loss:
