@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def Bernoulli_loss(mu, r):
     '''
     Generate Bernoulli loss sequence.
@@ -48,7 +47,7 @@ def predef_AdUCBE(N, K, turn_bud_to_N):
     ## Some definitions of symbols in the algorithm
     barLog = 0.5
     for i in range(2, K + 1):
-        barLog += 1 / i
+        barLog += 1. / i
 
     n = [np.ceil((N - K) / (barLog * (K + 1 - k))) for k in range(1, K)]
     n = np.asarray(n).astype(np.int32)
@@ -63,7 +62,7 @@ def predef_AdUCBE(N, K, turn_bud_to_N):
 
     if turn_bud_to_N:
         bud = N
-        N = np.floor(N ** 2 / t[-1])
+        N = np.ceil(1.0 * N ** 2 / t[-1])
         while (1):
             n = [np.ceil((N - K) / (barLog * (K + 1 - k))) for k in range(1, K)]
             n = np.asarray(n).astype(np.int32)
@@ -88,6 +87,7 @@ def get_loss_SH(loss_generate, loss, mu, var, S_k, size_Sk, R, r):
         for a in range(r):
             i = 0
             ind = np.arange(R + a * size_Sk, R + (a + 1) * size_Sk)
+            np.random.seed(a + 2019)
             np.random.shuffle(ind)
             ind = ind.astype(np.int32)
             for j in S_k:
@@ -95,10 +95,6 @@ def get_loss_SH(loss_generate, loss, mu, var, S_k, size_Sk, R, r):
                 l[i] += loss[j - 1, ind[i]]
                 i += 1
         l /= r
-        '''for j in S_k:
-            j = int(j)
-            l[i] = np.mean(loss[j - 1, R:(R + r)])
-            i += 1'''
 
     if loss_generate == Bernoulli_loss:
         for j in S_k:
@@ -123,16 +119,16 @@ def predef_N_SH(turn_bud_to_N, size_Sk, N, K):
         r = 0
         s = size_Sk
         for k in np.arange(np.ceil(np.log2(K))):
-            r += np.floor(N / (s * np.ceil(np.log2(K)))) * s
-            s = np.ceil(s / 2)
-        N = np.floor(N ** 2 / r)
+            r += np.floor(1.0 * N / (s * np.ceil(np.log2(K)))) * s
+            s = np.ceil(1.0 * s / 2)
+        N = np.ceil(1.0 * N ** 2 / r)
 
         while (1):
             r = 0
             s = size_Sk
             for k in np.arange(np.ceil(np.log2(K))):
-                r += np.floor(N / (s * np.ceil(np.log2(K)))) * s
-                s = np.ceil(s / 2)
+                r += np.floor(1.0 * N / (s * np.ceil(np.log2(K)))) * s
+                s = np.ceil(1.0 * s / 2)
             if r > bud:
                 N -= 1
             else:
@@ -166,9 +162,10 @@ def Successive_Halving(N, K, loss_generate, loss, mu, var, turn_bud_to_N):
         r = np.floor(N / (size_Sk * np.ceil(np.log2(K))))  ## pull each arm for r times
         if (r == 0):
             break
-        if (r * size_Sk + R > loss.shape[1]):
-            r = np.floor(loss.shape[1] - R) / size_Sk
+        if (r * size_Sk + R > N):
+            r = np.floor(N - R) / size_Sk
         r = int(r)
+
         l = get_loss_SH(loss_generate, loss, mu, var, S_k, size_Sk, R, r)
 
         l_dict = {}  ## build a dictionary in form of {arm: loss}
@@ -185,7 +182,7 @@ def Successive_Halving(N, K, loss_generate, loss, mu, var, turn_bud_to_N):
         for i in np.arange(len(l_sorted)):
             sigma[i] = l_sorted[i][0]
 
-        size_Sk = np.ceil(len(sigma) / 2)  ## renew size of S_k
+        size_Sk = np.ceil(len(sigma) / 2.)  ## renew size of S_k
         size_Sk = int(size_Sk)
 
         S_k = sigma[np.arange(size_Sk)]  ## renew S_k
@@ -227,7 +224,7 @@ def Ad_UCBE(c, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
             hat_H2 = max(eva_H[(K - k):K])
 
         k = int(k)
-        for tt in range(t[k] + 1, t[k + 1] + 1):
+        for tt in range(t[k] + 1, t[k + 1] + 1):                    
             It = int(np.argmax(B))
             T[It] += 1
             X, _ = get_reward_AdUCBE(loss_generate, loss, mu, var, X, It, tt)
@@ -252,6 +249,7 @@ def S3_BA(parameters, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
 
     Outputs:
     - best arm: S_k.
+    - trigger: boolean, switch to SH or not
     '''
     delta, c, C_w, C_3, C_init, C_gap = parameters
 
@@ -276,8 +274,11 @@ def S3_BA(parameters, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
     valueK = value / hat_H2
     valueKb = 0
 
+    trigger = False
+    trigger_time = -1
+
     ## Begin
-    for tt in range(t[0] + 1,  t[1] + 1):
+    for tt in range(t[0] + 1,  t[1] + 1):                
         bar_width = np.sqrt(valueK / tt)
         lcb = np.max([lcb, hat_mu - width], 0)
         bar_lcb = np.max([bar_lcb, bar_mu - bar_width], 0)
@@ -297,7 +298,7 @@ def S3_BA(parameters, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
         gap[It] = C_gap * width[It]
 
     k = 1
-    for tt in range(t[1] + 1, t[K - 1] + 1):
+    for tt in range(t[1] + 1, t[K - 1] + 1):                
         ## Step 1: Estimate H2 and renew 'Active' and 'Bad' arms sets
         if (tt == t[k] + 1):
             sorted_hat_Delta = np.sort(max(hat_mu) * np.ones([K, ]) - hat_mu)
@@ -324,23 +325,31 @@ def S3_BA(parameters, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
         lcb_star = np.max(np.max([lcb, bar_lcb], 0))
 
         ## Step 2: detect non-stochastic arms
-        for i in Active:
-            if (hat_mu[i] > bar_ucb[i] or hat_mu[i] < bar_lcb[i] or low_sum > valueKb):
-                if ((N - tt) / (len(Active) * np.ceil(np.log2(K))) <= 1):
-                    break
-                if loss_generate == False:
-                    for i in range(K):
-                        for j in range(loss.shape[1] - tt):
-                            loss[i, j] = loss[i, int(j + tt)]
-                    loss = loss[Active, 0:(loss.shape[1] - tt)] # eliminate the losses which have been observed
-                    It = Successive_Halving(N - tt, len(Active), loss_generate, loss, [], [], turn_bud_to_N)
-                    return Active[It - 1] + 1
-                if loss_generate == Bernoulli_loss:
-                    It = Successive_Halving(N - tt, len(Active), loss_generate, loss, mu[Active], [], turn_bud_to_N)
-                    return Active[It - 1] + 1
-                if loss_generate == Gaussian_loss:
-                    It = Successive_Halving(N - tt, len(Active), loss_generate, loss, mu[Active], var[Active], turn_bud_to_N)
-                    return Active[It - 1] + 1
+        if len(Active) == 0:
+            trigger = True
+            trigger_time = tt
+            return np.argmax(hat_mu) + 1, trigger, trigger_time
+        else:
+            for i in Active:
+                if (hat_mu[i] > bar_ucb[i] or hat_mu[i] < bar_lcb[i] or low_sum > valueKb):
+                    trigger = True
+                    trigger_time = tt
+                    if ((t[-1] - tt) / (len(Active) * np.ceil(np.log2(K))) <= 1):
+                        return np.argmax(hat_mu) + 1, trigger, trigger_time
+                    if loss_generate == False:
+                        #loss[:, :loss.shape[1] - tt] = loss[:, tt:]
+                        #for i in range(K):
+                            #for j in range(loss.shape[1] - tt):
+                            #    loss[i, j] = loss[i, int(j + tt)]
+                        #loss = loss[Active, tt:] # eliminate the losses which have been observed
+                        It = Successive_Halving(t[-1] - tt, len(Active), loss_generate, loss[Active, tt:], [], [], turn_bud_to_N)
+                        return Active[It - 1] + 1, trigger, trigger_time
+                    if loss_generate == Bernoulli_loss:
+                        It = Successive_Halving(t[-1] - tt, len(Active), loss_generate, loss[Active, tt:], mu[Active], [], turn_bud_to_N)
+                        return Active[It - 1] + 1, trigger, trigger_time
+                    if loss_generate == Gaussian_loss:
+                        It = Successive_Halving(t[-1] - tt, len(Active), loss_generate, loss[Active, tt:], mu[Active], var[Active], turn_bud_to_N)
+                        return Active[It - 1] + 1, trigger, trigger_time
 
         ## Step 3: draw arm
         r = np.random.rand(1)
@@ -362,4 +371,4 @@ def S3_BA(parameters, N, K, loss_generate, loss, mu, var, turn_bud_to_N):
         width[It] = np.sqrt(valueK / (K * T[It]))
         gap[It] = C_gap * width[It]
 
-    return np.argmax(hat_mu) + 1
+    return np.argmax(hat_mu) + 1, trigger, trigger_time
