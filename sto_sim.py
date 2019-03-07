@@ -144,8 +144,3 @@ sio.savemat('./er_S3BA_sdelta2_sto.mat', {'er_S3BA_sdelta2_sto': er_S3BA_sdelta2
 
 
 
-
-
-
-
-
